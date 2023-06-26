@@ -1,9 +1,14 @@
+if (process.env.NODE_ENV !== 'production') {
+	require('dotenv').config();
+}
+
 const log4js = require('log4js');
-let version = require('./package.json').version;
+
+const dataStackUtils = require('@appveen/data.stack-utils');
 
 
 let LOG_LEVEL = process.env.LOG_LEVEL || 'info';
-const LOGGER_NAME = isK8sEnv() ? `[${process.env.DATA_STACK_NAMESPACE}] [${process.env.HOSTNAME}] [PROCESS-FLOW ${version}]` : `[PROCESS-FLOW ${version}]`;
+const LOGGER_NAME = isK8sEnv() ? `[${process.env.DATA_STACK_NAMESPACE}] [${process.env.HOSTNAME}] [PROCESS-FLOW ${process.env.DATA_STACK_PROCESS_FLOW_ID}]` : `[PROCESS-FLOW ${process.env.DATA_STACK_PROCESS_FLOW_ID}]`;
 
 if (process.env.NODE_ENV !== 'production') LOG_LEVEL = 'trace';
 
@@ -14,6 +19,8 @@ log4js.configure({
 
 const logger = log4js.getLogger(LOGGER_NAME);
 
+const DATA_STACK_NAMESPACE = process.env.DATA_STACK_NAMESPACE || 'appveen';
+
 
 global.loggerName = LOGGER_NAME;
 global.logger = logger;
@@ -22,11 +29,20 @@ global.txnIdHeader = 'txnid';
 global.trueBooleanValues = ['y', 'yes', 'true', '1'];
 global.falseBooleanValues = ['n', 'no', 'false', '0'];
 
+
+logger.info(`DATA_STACK_APP_DB :: ${process.env.DATA_DB}`);
+logger.info(`DATA_STACK_APP_NAME :: ${process.env.DATA_STACK_APP}`);
+logger.info(`DATA_STACK_NAMESPACE :: ${DATA_STACK_NAMESPACE}`);
+logger.info(`DATA_STACK_FLOW_NAMESPACE :: ${process.env.DATA_STACK_FLOW_NAMESPACE}`);
+logger.info(`DATA_STACK_PROCESS_FLOW_ID :: ${process.env.DATA_STACK_PROCESS_FLOW_ID}`);
+
 logger.info(`NODE_ENV :: ${process.env.NODE_ENV}`);
+
 logger.info(`LOG_LEVEL :: ${LOG_LEVEL}`);
+logger.info(`LOGGER_NAME :: ${LOGGER_NAME}`);
 
-
-const DATA_STACK_NAMESPACE = process.env.DATA_STACK_NAMESPACE || 'appveen';
+logger.info(`KUBERNETES_SERVICE_HOST :: ${process.env.KUBERNETES_SERVICE_HOST}`);
+logger.info(`KUBERNETES_SERVICE_PORT :: ${process.env.KUBERNETES_SERVICE_PORT}`);
 
 
 if (process.env.KUBERNETES_SERVICE_HOST && process.env.KUBERNETES_SERVICE_PORT) {
@@ -47,7 +63,7 @@ function isK8sEnv() {
 
 if (isK8sEnv()) {
     logger.info('*** K8s environment detected ***');
-    logger.info('Image version: ' + process.env.IMAGE_TAG);
+    logger.info(`Image version :: ${process.env.IMAGE_TAG}`);
 } else {
     logger.info('*** Local environment detected ***');
 }
@@ -78,16 +94,6 @@ function get(_service) {
 
 
 if (isK8sEnv() && !DATA_STACK_NAMESPACE) throw new Error('DATA_STACK_NAMESPACE not found. Please check your configMap');
-
-
-function getFileSize(size) {
-    let factor = 1;
-    let unit = size.substr(size.length - 1);
-    let s = parseInt(size.substr(0, size.length - 1));
-    if (unit.toLowerCase() == 'k') factor *= 1024;
-    if (unit.toLowerCase() == 'm') factor *= (1024 * 1024);
-    return s * factor;
-}
 
 
 module.exports = {

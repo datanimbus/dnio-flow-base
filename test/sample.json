@@ -1,0 +1,277 @@
+{
+    "_id": "FLOW1452",
+    "app": "Demo",
+    "name": "Sample",
+    "version": 22,
+    "status": "Active",
+    "inputNode": {
+        "_id": "SCRKOX",
+        "type": "API",
+        "options": {
+            "method": "POST",
+            "path": "/sample",
+            "contentType": "application/json"
+        },
+        "dataStructure": {
+            "outgoing": {
+                "_id": "KOWWP",
+                "name": "Custom_KOWWP"
+            }
+        },
+        "name": "Loan Origination",
+        "mappings": [],
+        "onSuccess": [
+            {
+                "_id": "SUZCED"
+            }
+        ]
+    },
+    "nodes": [
+        {
+            "_id": "SUZCED",
+            "type": "SYSTEM",
+            "onSuccess": [
+                {
+                    "_id": "SZMLXJ"
+                }
+            ],
+            "onError": [],
+            "api": {
+                "method": "GET",
+                "headers": {},
+                "url": "https://bifrost.ds.appveen.com/api/a/faas/Demo2/sampleValidator",
+                "body": "",
+                "insert": true,
+                "type": "External"
+            },
+            "dataStructure": {
+                "outgoing": {
+                    "_id": "SUMXI",
+                    "name": "Custom_SUMXI",
+                    "definition": [
+                        {
+                            "type": "String",
+                            "key": "panName",
+                            "properties": {
+                                "name": "panName"
+                            }
+                        },
+                        {
+                            "type": "String",
+                            "key": "panNumber",
+                            "properties": {
+                                "name": "panNumber",
+                                "dataPath": "panNumber"
+                            }
+                        },
+                        {
+                            "type": "Boolean",
+                            "key": "valid",
+                            "properties": {
+                                "name": "valid",
+                                "dataPath": "valid"
+                            }
+                        }
+                    ],
+                    "formatType": "JSON"
+                }
+            },
+            "name": "Validate PAN",
+            "mappings": []
+        },
+        {
+            "_id": "SZMLXJ",
+            "type": "TRIGGER",
+            "onSuccess": [
+                {
+                    "_id": "STSBHC"
+                }
+            ],
+            "onError": [],
+            "api": {
+                "method": "POST",
+                "headers": {},
+                "insert": true
+            },
+            "dataStructure": {
+                "outgoing": {
+                    "_id": "FCMMY",
+                    "name": "Custom_FCMMY",
+                    "definition": [
+                        {
+                            "type": "String",
+                            "key": "aadhaar",
+                            "properties": {
+                                "name": "aadhaar",
+                                "dataPath": "aadhaar"
+                            }
+                        }
+                    ],
+                    "formatType": "JSON"
+                }
+            },
+            "name": "Set Aadhaar Payload",
+            "mappings": [
+                {
+                    "target": {
+                        "type": "String",
+                        "dataPath": "aadhaar"
+                    },
+                    "source": [],
+                    "formula": "return node[\"SCRKOX\"].body['aadhaar']",
+                    "formulaID": "formula_eee23B2684294A709E7EB5404Dab32B0"
+                }
+            ]
+        },
+        {
+            "_id": "STSBHC",
+            "type": "SYSTEM",
+            "onSuccess": [],
+            "onError": [],
+            "api": {
+                "method": "POST",
+                "headers": {
+                    "Authorization": "{{node['SCRKOX'].headers['Authorization']}}"
+                },
+                "url": "https://bifrost.ds.appveen.com/api/a/faas/Demo2/sampleValidator",
+                "body": "{{node[\"SZMLXJ\"].body}}",
+                "insert": true
+            },
+            "dataStructure": {
+                "outgoing": {
+                    "_id": "TYZNT",
+                    "name": "Custom_TYZNT",
+                    "definition": [
+                        {
+                            "type": "String",
+                            "key": "aadhaar",
+                            "properties": {
+                                "name": "aadhaar",
+                                "dataPath": "aadhaar"
+                            }
+                        }
+                    ],
+                    "formatType": "JSON"
+                }
+            },
+            "name": "Validate Aadhaar",
+            "mappings": []
+        }
+    ],
+    "description": null,
+    "isBinary": false,
+    "_metadata": {
+        "lastUpdated": "2022-11-16T20:08:38.982Z",
+        "createdAt": "2022-11-16T18:22:21.270Z",
+        "deleted": false,
+        "version": {
+            "document": 23,
+            "_id": "63752a5d5b5280f93cd9956b"
+        },
+        "_id": "63752a5d5b5280f93cd9956a"
+    },
+    "deploymentName": "b2b-idvalidator",
+    "namespace": "appveen-demo2",
+    "dataStructures": {
+        "KOWWP": {
+            "_id": "KOWWP",
+            "name": "Custom_KOWWP",
+            "definition": [
+                {
+                    "type": "String",
+                    "key": "name",
+                    "properties": {
+                        "name": "name",
+                        "dataPath": "name"
+                    }
+                },
+                {
+                    "type": "String",
+                    "key": "pan",
+                    "properties": {
+                        "name": "pan",
+                        "dataPath": "pan"
+                    }
+                },
+                {
+                    "type": "String",
+                    "key": "aadhaar",
+                    "properties": {
+                        "name": "aadhaar",
+                        "dataPath": "aadhaar"
+                    }
+                },
+                {
+                    "type": "String",
+                    "key": "phoneNumber",
+                    "properties": {
+                        "name": "phoneNumber",
+                        "dataPath": "phoneNumber"
+                    }
+                }
+            ],
+            "formatType": "JSON"
+        },
+        "SUMXI": {
+            "_id": "SUMXI",
+            "name": "Custom_SUMXI",
+            "definition": [
+                {
+                    "type": "String",
+                    "key": "panName",
+                    "properties": {
+                        "name": "panName"
+                    }
+                },
+                {
+                    "type": "String",
+                    "key": "panNumber",
+                    "properties": {
+                        "name": "panNumber",
+                        "dataPath": "panNumber"
+                    }
+                },
+                {
+                    "type": "Boolean",
+                    "key": "valid",
+                    "properties": {
+                        "name": "valid",
+                        "dataPath": "valid"
+                    }
+                }
+            ],
+            "formatType": "JSON"
+        },
+        "FCMMY": {
+            "_id": "FCMMY",
+            "name": "Custom_FCMMY",
+            "definition": [
+                {
+                    "type": "String",
+                    "key": "aadhaar",
+                    "properties": {
+                        "name": "aadhaar",
+                        "dataPath": "aadhaar"
+                    }
+                }
+            ],
+            "formatType": "JSON"
+        },
+        "TYZNT": {
+            "_id": "TYZNT",
+            "name": "Custom_TYZNT",
+            "definition": [
+                {
+                    "type": "String",
+                    "key": "aadhaar",
+                    "properties": {
+                        "name": "aadhaar",
+                        "dataPath": "aadhaar"
+                    }
+                }
+            ],
+            "formatType": "JSON"
+        }
+    },
+    "port": 31000
+}
