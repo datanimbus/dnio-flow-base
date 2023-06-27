@@ -101,8 +101,8 @@ module.exports = {
     hostname: process.env.HOSTNAME,
     release: process.env.RELEASE,
 
-	port: process.env.PORT || 8080,
-	httpsPort: process.env.HTTPS_PORT || 8443,
+	port: process.env.PORT || 31000,
+	httpsPort: process.env.HTTPS_PORT || 31443,
 
 	baseUrlBM: get('bm') + '/bm',
     baseUrlCM: get('cm') + '/cm',
@@ -130,12 +130,12 @@ module.exports = {
 	TOKEN_SECRET: process.env.TOKEN_SECRET || 'u?5k167v13w5fhjhuiweuyqi67621gqwdjavnbcvadjhgqyuqagsduyqtw87e187etqiasjdbabnvczmxcnkzn',
 	RBAC_JWT_KEY: process.env.RBAC_JWT_KEY || 'u?5k167v13w5fhjhuiweuyqi67621gqwdjavnbcvadjhgqyuqagsduyqtw87e187etqiasjdbabnvczmxcnkzn',
 
-	mongoUrl: process.env.MONGO_APPCENTER_URL || 'mongodb://localhost',
+	mongoUrl: process.env.MONGO_APPCENTER_URL || 'mongodb://root:itworks%40123123123@localhost:27017',
 	
-	mongoAuthorUrl: process.env.MONGO_AUTHOR_URL || 'mongodb://localhost',
+	mongoAuthorUrl: process.env.MONGO_AUTHOR_URL || 'mongodb://root:itworks%40123123123@localhost:27017',
 	authorDB: process.env.MONGO_AUTHOR_DBNAME || 'datastackConfig',
 	
-	mongoLogUrl: process.env.MONGO_LOGS_URL || 'mongodb://localhost',
+	mongoLogUrl: process.env.MONGO_LOGS_URL || 'mongodb://root:itworks%40123123123@localhost:27017',
 	logsDB: process.env.MONGO_LOGS_DBNAME || 'datastackLogs',
 
 	googleKey: process.env.GOOGLE_API_KEY || '',

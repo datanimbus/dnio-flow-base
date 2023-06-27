@@ -1,3 +1,4 @@
+const Async = require('async');
 const { v4: uuid } = require('uuid');
 
 const config = require('../config');

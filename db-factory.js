@@ -13,7 +13,7 @@ const logger = global.logger;
 		logger.trace(`Appcenter connection details :: ${JSON.stringify({ 'url': config.mongoUrl, 'options': config.mongoAppCenterOptions, 'db': config.appDB})}`);
 
 		const client = await MongoClient.connect(config.mongoUrl, config.mongoAppCenterOptions);
-		const appcenterDB = client.db(config.appDB);
+		const appcenterDB = await client.db(config.appDB);
 		global.appcenterDB = appcenterDB;
 
 		logger.info(`Connected to ${config.appDB} DB`);
@@ -26,7 +26,7 @@ const logger = global.logger;
 	try {
 		logger.info(`Sending request to CM to initialize the Process Flow :: ${config.flowId}`);
 
-		let processFlowURL = config.baseUrlCM + '/' + config.app + '/flow/utils/' + config.flowId + '/init';
+		let processFlowURL = config.baseUrlCM + '/' + config.app + '/processflow/utils/' + config.flowId + '/init';
 
 		logger.debug(`CM API call :: ${processFlowURL}`);
 
