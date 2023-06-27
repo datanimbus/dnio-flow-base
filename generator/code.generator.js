@@ -105,7 +105,7 @@ function parseFlow(dataJson) {
 		code.push(`${tab(2)}state.body = { message: 'No files were uploaded.' };`);
 		code.push('');
 		code.push(`${tab(2)}stateUtils.upsertState(req, state);`);
-		code.push(`${tab(2)}stateUtils.updateActivity(req, { status: 'ERRORED', payloadMetaData: undefined });`);
+		code.push(`${tab(2)}stateUtils.updateActivity(req, { status: 'ERROR', flowId: '${dataJson._id}' });`);
 		code.push('');
 		code.push(`${tab(2)}return res.status(400).json({ message: 'No Files uploaded.' });`);
 		code.push(`${tab(1)}}`);
@@ -114,7 +114,7 @@ function parseFlow(dataJson) {
 		code.push(`${tab(1)}const reqFile = req.files.file;`);
 		code.push(`${tab(1)}logger.trace(\`[\${txnId}] [\${remoteTxnId}] Request file info :: \${reqFile}\`);`);
 		code.push('');
-		code.push(`${tab(1)}stateUtils.updateActivity(req, { payloadMetaData: reqFile });`);
+		code.push(`${tab(1)}stateUtils.updateActivity(req, { payloadMetaData: reqFile, flowId: '${dataJson._id}' });`);
 
 		code.push('');
 		code.push('');
@@ -229,7 +229,7 @@ function parseFlow(dataJson) {
 	code.push(`${tab(1)}state.status = 'SUCCESS';`);
 	code.push('');
 	code.push(`${tab(1)}stateUtils.upsertState(req, state);`);
-	code.push(`${tab(1)}stateUtils.updateActivity(req, { payloadMetaData: metaData });`);
+	code.push(`${tab(1)}stateUtils.updateActivity(req, { payloadMetaData: metaData, flowId: '${dataJson._id}' });`);
 	code.push('');
 
 	logger.debug(`Nodes Length :: ${nodes.length}`);
@@ -263,9 +263,11 @@ function parseFlow(dataJson) {
 		})
 
 	}
+	code.push(`${tab(1)}stateUtils.updateActivity(req, { status: 'SUCCESS', flowId: '${dataJson._id}' });`);
+	code.push('');
 	code.push(`${tab(1)}return;`);
 	code.push('}');
-	
+
 
 	code.push('');
 	code.push('');
@@ -290,31 +292,43 @@ function generateSystemNode(code, node) {
 	code.push(`${tab(1)}stateUtils.upsertState(req, state);`);
 	code.push('');
 	code.push('');
+	code.push(`${tab(1)}try {`)
 
-	code.push(`${tab(1)}const options = {};`);
-	code.push(`${tab(1)}options.url = \`${node?.api?.url}\`;`);
-	code.push(`${tab(1)}options.headers = ${JSON.stringify(node?.api?.headers || {})};`);
-	code.push(`${tab(1)}options.method = ${node?.api?.method};`);
-	code.push(`${tab(1)}options.body = ${JSON.stringify(node?.api?.body || {})};`);
-	code.push(`${tab(1)}options.timeout = ${node?.api?.timeout || 60000};`);
+	code.push(`${tab(2)}const options = {};`);
+	code.push(`${tab(2)}options.url = \`${node?.api?.endpoint}\`;`);
+	code.push(`${tab(2)}options.headers = ${JSON.stringify(node?.api?.headers || {})};`);
+	code.push(`${tab(2)}options.method = '${node?.api?.method}';`);
+	if (node.api.method == 'POST' || node.api.method == 'PUT') {
+		code.push(`${tab(2)}options.body = ${JSON.stringify(node?.api?.body || {})};`);
+	}
+	code.push(`${tab(2)}options.timeout = ${node?.api?.timeout || 60000};`);
 
 	if (node?.api?.type === 'External') {
 		code.push(``);
-		code.push(`${tab(1)}let resp = await httpClient.request(options);`);
+		code.push(`${tab(2)}let resp = await httpClient.request(options);`);
 		code.push(``);
-		code.push(`${tab(1)}req.body = resp.body;`);
-		code.push(`${tab(1)}req.statusCode = resp.statusCode;`);
+		code.push(`${tab(2)}req.body = resp.body;`);
+		code.push(`${tab(2)}req.statusCode = resp.statusCode;`);
 		code.push(``);
-		code.push(`${tab(1)}return await handle${flowData.name}${node._id}(req, null);`);
+		code.push(`${tab(2)}return await handle${flowData.name}${node._id}(req, null);`);
 
 	} else if (node?.api?.type === 'DataPipe') {
-		code.push(`${tab(1)}options.insert = ${node?.api?.insert || false};`);
+		code.push(`${tab(2)}options.insert = ${node?.api?.insert || false};`);
 		code.push(``);
-		code.push(`${tab(1)}httpClient.request(options);`);
+		code.push(`${tab(2)}httpClient.request(options);`);
 		code.push(``);
-		code.push(`${tab(1)}return;`);
+		code.push(`${tab(2)}return;`);
 	}
 
+	code.push(`${tab(1)}} catch(err) {`);
+	code.push(`${tab(2)}logger.error(\`Error invoking System Node :: \${err}\`);`)
+	code.push(`${tab(2)}state.status = "ERROR";`);
+	code.push(`${tab(2)}state.statusCode = err.statusCode;`);
+	code.push(`${tab(2)}state.body = { message: err.body.message };`);
+	code.push('');
+	code.push(`${tab(2)}stateUtils.upsertState(req, state);`);
+	code.push(`${tab(2)}stateUtils.updateActivity(req, { status: 'ERROR', flowId: '${flowData._id}' });`);
+	code.push(`${tab(1)}}`);
 	code.push(`}`);
 	code.push('');
 	code.push('');

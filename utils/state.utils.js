@@ -1,4 +1,3 @@
-const Async = require('async');
 const { v4: uuid } = require('uuid');
 
 const config = require('../config');
@@ -6,7 +5,6 @@ const httpClient = require('../http-client');
 
 
 const logger = global.logger;
-const activityQueue = Async.priorityQueue(processActivity);
 
 
 function getState(req, data) {
@@ -79,25 +77,14 @@ async function upsertState(req, state) {
 
 
 async function updateActivity(req, data) {
-	try {
-		activityQueue.push({ req, data });
-	} catch (err) {
-		logger.error(err);
-	}
-}
-
-
-async function processActivity(task, callback) {
 	const txnId = req.headers['data-stack-txn-id'];
 	const remoteTxnId = req.headers['data-stack-remote-txn-id'];
-
-	const req = task.req;
-	const data = task.data;
 	
 	const activityId = req.query.activityId;
-	const activityURL = `${config.baseUrlCM}/${config.app}/processflow/activities/${config.flowId}/${activityId}`;
+	const activityURL = `${config.baseUrlCM}/${config.app}/processflow/activities/${data.flowId}/${activityId}`;
 
-	logger.debug(`[${txnId}] [${remoteTxnId}] Updating Activity for Flow ID :: ${config.flowId} :: Activity ID :: ${activityId}`);
+	logger.debug(`[${txnId}] [${remoteTxnId}] Updating Activity for Flow ID :: ${data.flowId} :: Activity ID :: ${activityId}`);
+	logger.debug(`[${txnId}] [${remoteTxnId}] Url for updating Activity :: ${activityURL}`);
 	
 	try {
 		const status = await httpClient.request({
@@ -109,14 +96,13 @@ async function processActivity(task, callback) {
 			}
 		});
 
-		logger.debug(`[${txnId}] [${remoteTxnId}] Updated Activity for Flow ID :: ${config.flowId} :: Activity ID :: ${activityId}`);
-		logger.trace(`[${txnId}] [${remoteTxnId}] Activity status for Flow ID :: ${config.flowId} :: Activity ID :: ${activityId} :: ${status.statusCode}`);
-		logger.trace(`[${txnId}] [${remoteTxnId}] Activity status for Flow Id :: ${config.flowId} :: Activity ID :: ${activityId} :: ${JSON.stringify(status.body)}`);
+		logger.debug(`[${txnId}] [${remoteTxnId}] Updated Activity for Flow ID :: ${data.flowId} :: Activity ID :: ${activityId}`);
+		logger.trace(`[${txnId}] [${remoteTxnId}] Activity status for Flow ID :: ${data.flowId} :: Activity ID :: ${activityId} :: ${status.statusCode}`);
+		logger.trace(`[${txnId}] [${remoteTxnId}] Activity status for Flow Id :: ${data.flowId} :: Activity ID :: ${activityId} :: ${JSON.stringify(status.body)}`);
 
 		return true;
 	} catch (err) {
-		logger.error(`[${txnId}] [${remoteTxnId}] Error Updating Activity for Flow ID :: ${config.flowId} :: Activity ID :: ${activityId} :: ${err}`);
-		callback(err);
+		logger.error(`[${txnId}] [${remoteTxnId}] Error Updating Activity for Flow ID :: ${data.flowId} :: Activity ID :: ${activityId} :: ${err}`);
 	}
 }
 

@@ -3,6 +3,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const fs = require('fs');
+const _ = require('lodash');
 const path = require('path');
 const express = require('express');
 const JWT = require('jsonwebtoken');
@@ -24,37 +25,64 @@ if (!config.flowId) {
 
 
 let url = config.baseUrlCM + '/' + config.app + '/processflow/' + config.flowId;
-logger.info(`Requesting CM for Process Flow data :: ${url}`)
+logger.info(`Requesting CM for Process Flow data :: ${url}`);
 
 
-httpClient.request({
-	url: url,
-	method: 'GET',
-	headers: {
-		'Content-Type': 'application/json',
-		'Authorization': 'JWT ' + token
-	}
-}).then(async (res) => {
-	logger.info(`Reponse code :: ${res.statusCode}`);
-	if (res.statusCode !== 200) {
-		throw res.body;
-	}
-
-	const flowData = JSON.parse(JSON.stringify(res.body));
-	config.appNamespace = flowData.namespace;
-	config.imageTag = flowData._id + ':' + flowData.version;
-	config.appDB = config.DATA_STACK_NAMESPACE + '-' + flowData.app;
-	config.port = flowData.port || config.port;
-
+(async () => {
 	try {
-		await codeGen.createProject(flowData);
-		await initialize();
+		let res = await httpClient.request({
+			url: url,
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': 'JWT ' + token
+			}
+		});
+
+		logger.info(`Reponse code :: ${res.statusCode}`);
+		if (res.statusCode !== 200) {
+			throw res.body;
+		}
+
+		const flowData = JSON.parse(JSON.stringify(res.body));
+
+		let nodeIds = _.map(flowData.nodes, e => e._id);
+
+		let nodeUrl = `${config.baseUrlCM}/${config.app}/processnode?filter={ "_id": { "$in": ["${nodeIds.join('","')}"] } }`;
+
+		let nodeRes = await httpClient.request({
+			url: nodeUrl,
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': 'JWT ' + token
+			}
+		});
+
+		nodeIds.forEach(e => {
+			let node = _.find(nodeRes.body, n => n._id == e);
+
+			let index = _.findIndex(flowData.nodes, n => n._id == e);
+
+			flowData.nodes[index] = node;
+		});
+
+		config.appNamespace = flowData.namespace;
+		config.imageTag = flowData._id + ':' + flowData.version;
+		config.appDB = config.DATA_STACK_NAMESPACE + '-' + flowData.app;
+		config.port = flowData.port || config.port;
+
+		try {
+			await codeGen.createProject(flowData);
+			initialize();
+		} catch (err) {
+			logger.error(`Error Creating Files for Flow :: ${config.flowId} :: ${JSON.stringify(err)}`);
+		}
+
 	} catch (err) {
-		logger.error(`Error Creating Files for Flow :: ${config.flowId} :: ${JSON.stringify(err)}`);
+		logger.error(`Error connecting to CM :: ${JSON.stringify(err)}`);
 	}
-}).catch(err => {
-	logger.error(`Error connecting to CM :: ${JSON.stringify(err)}`);
-});
+})();
 
 
 async function initialize() {
