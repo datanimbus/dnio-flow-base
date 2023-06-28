@@ -80,7 +80,7 @@ async function updateActivity(req, data) {
 	const txnId = req.headers['data-stack-txn-id'];
 	const remoteTxnId = req.headers['data-stack-remote-txn-id'];
 	
-	const activityId = req.query.activityId;
+	const activityId = req.query.activityId || req.params.activityId;
 	const activityURL = `${config.baseUrlCM}/${config.app}/processflow/activities/${data.flowId}/${activityId}`;
 
 	logger.debug(`[${txnId}] [${remoteTxnId}] Updating Activity for Flow ID :: ${data.flowId} :: Activity ID :: ${activityId}`);

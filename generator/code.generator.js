@@ -260,8 +260,7 @@ function parseFlow(dataJson) {
 				code.push('');
 				code.push('');
 			}
-		})
-
+		});
 	}
 	code.push(`${tab(1)}stateUtils.updateActivity(req, { status: 'SUCCESS', flowId: '${dataJson._id}' });`);
 	code.push('');
@@ -324,7 +323,7 @@ function generateSystemNode(code, node) {
 	code.push(`${tab(2)}logger.error(\`Error invoking System Node :: \${err}\`);`)
 	code.push(`${tab(2)}state.status = "ERROR";`);
 	code.push(`${tab(2)}state.statusCode = err.statusCode;`);
-	code.push(`${tab(2)}state.body = { message: err.body.message };`);
+	code.push(`${tab(2)}state.body = { message: err.body?.message || err };`);
 	code.push('');
 	code.push(`${tab(2)}stateUtils.upsertState(req, state);`);
 	code.push(`${tab(2)}stateUtils.updateActivity(req, { status: 'ERROR', flowId: '${flowData._id}' });`);
@@ -340,10 +339,16 @@ function generateSystemNode(code, node) {
 	code.push(`${tab(1)}let txnId = req.headers['data-stack-txn-id'];`);
 	code.push(`${tab(1)}let remoteTxnId = req.headers['data-stack-remote-txn-id'];`);
 	code.push('');
+	code.push(`${tab(1)}if (!res.headersSent) {`);
+	code.push(`${tab(2)}res.status(202).json({ message: 'Your requested is being processed, Please check activities for final status.' });`);
+	code.push(`${tab(1)}}`);
+	code.push('');
 	code.push(`${tab(1)}logger.info(\`[\${txnId}] [\${remoteTxnId}] Processing Flow ID :: ${flowData._id} :: NodeID :: ${node._id}\`);`);
 	code.push('');
 	code.push('');
 	code.push(`${tab(1)}let state = stateUtils.getState(req, { flowId: '${flowData._id}', nodeId: '${node._id}', nodeType: 'SYSTEM', contentType: '${(node?.api?.contentType || '')}'});`);
+	code.push(`${tab(1)}delete state._id;`);
+	code.push(`${tab(1)}state.status = 'SUCCESS';`);
 	code.push('');
 	code.push(`${tab(1)}stateUtils.upsertState(req, state);`);
 	code.push('');
@@ -360,13 +365,16 @@ function generateTriggerNode(code, node) {
 	code.push(`${tab(1)}let txnId = req.headers['data-stack-txn-id'];`);
 	code.push(`${tab(1)}let remoteTxnId = req.headers['data-stack-remote-txn-id'];`);
 	code.push('');
+	code.push(`${tab(1)}res.status(202).json({ message: 'Your requested is being processed, Please check activities for final status.' });`);
+	code.push('');
 	code.push(`${tab(1)}logger.info(\`[\${txnId}] [\${remoteTxnId}] Processing Flow ID :: ${flowData._id} :: NodeID :: ${node._id}\`);`);
 	code.push('');
 	code.push('');
-	code.push(`${tab(1)}let state = stateUtils.getState(req, { flowId: '${flowData._id}', nodeId: '${node._id}', nodeType: 'SYSTEM', contentType: '${(node?.api?.contentType || '')}'});`);
+	code.push(`${tab(1)}let state = stateUtils.getState(req, { flowId: '${flowData._id}', nodeId: '${node._id}', nodeType: 'TRIGGER', contentType: '${(node?.api?.contentType || '')}'});`);
+	code.push(`${tab(1)}state.status = 'SUCCESS';`);
+	code.push('');
 	code.push('');
 	code.push(`${tab(1)}stateUtils.upsertState(req, state);`);
-	code.push('');
 }
 
 
