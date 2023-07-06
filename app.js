@@ -46,7 +46,7 @@ logger.info(`Requesting CM for Process Flow data :: ${url}`);
 
 		const flowData = JSON.parse(JSON.stringify(res.body));
 
-		let nodeIds = _.map(flowData.nodes, e => e._id);
+		let nodeIds = _.map(flowData.nodes, e => e.nodeId);
 
 		let nodeUrl = `${config.baseUrlCM}/${config.app}/processnode?filter={ "_id": { "$in": ["${nodeIds.join('","')}"] } }`;
 
@@ -62,9 +62,13 @@ logger.info(`Requesting CM for Process Flow data :: ${url}`);
 		nodeIds.forEach(e => {
 			let node = _.find(nodeRes.body, n => n._id == e);
 
-			let index = _.findIndex(flowData.nodes, n => n._id == e);
+			let index = _.findIndex(flowData.nodes, n => n.nodeId == e);
 
-			flowData.nodes[index] = node;
+			flowData.nodes[index].type = node.type;
+			flowData.nodes[index].name = node.name;
+			flowData.nodes[index].app = node.app;
+			flowData.nodes[index].api = node.api;
+			flowData.nodes[index].dataStructure = node.dataStructure;
 		});
 
 		config.appNamespace = flowData.namespace;

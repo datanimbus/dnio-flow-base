@@ -3,6 +3,7 @@ const path = require('path');
 const mkdirp = require('mkdirp');
 
 const codeGen = require('./code.generator');
+const dsGen = require('./ds.generator');
 // const schemaUtils = require('./schema.utils');
 
 
@@ -24,11 +25,24 @@ async function createProject(flowJSON) {
 		if (!fs.existsSync(path.join(folderPath, 'router'))) {
 			mkdirp.sync(path.join(folderPath, 'router'));
 		}
+		if (!fs.existsSync(path.join(folderPath, 'schemas'))) {
+			mkdirp.sync(path.join(folderPath, 'schemas'));
+		}
+
+		if (flowJSON.dataStructures && Object.keys(flowJSON.dataStructures).length > 0) {
+			Object.keys(flowJSON.dataStructures).forEach(schemaID => {
+				let schema = flowJSON.dataStructures[schemaID];
+				schema._id = schemaID;
+				if (schema.definition) {
+					fs.writeFileSync(path.join(folderPath, 'schemas', `${schemaID}.schema.json`), JSON.stringify(schemaUtils.convertToJSONSchema(schema)));
+				}
+			});
+		}
 
 		fs.writeFileSync(path.join(folderPath, 'router', 'route.js'), codeGen.parseFlow(flowJSON));
 		// fs.writeFileSync(path.join(folderPath, 'node.utils.js'), nodeUtilsContent);
 		// fs.writeFileSync(path.join(folderPath, 'file.utils.js'), codeGen.parseDataStructuresForFileUtils(flowJSON));
-		// fs.writeFileSync(path.join(folderPath, 'validation.utils.js'), codeGen.parseDataStructures(flowJSON));
+		fs.writeFileSync(path.join(folderPath, 'utils', 'validation.utils.js'), dsGen.parseDataStructures(flowJSON));
 		fs.writeFileSync(path.join(folderPath, 'flow.json'), JSON.stringify(flowJSON));
 
 		// fs.rmdirSync(path.join(folderPath, 'generator'), { recursive: true });

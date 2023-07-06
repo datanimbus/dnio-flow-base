@@ -11,43 +11,52 @@ function getState(req, data) {
 	const txnId = req.headers['data-stack-txn-id'];
 	const remoteTxnId = req.headers['data-stack-remote-txn-id'];
 	const stateId = uuid();
-	
-	logger.debug(`[${txnId}] [${remoteTxnId}] Creating state for Flow ID :: ${data.flowId} :: Node ID :: ${data.nodeId} :: State ID :: ${stateId}`);
-	logger.trace(`[${txnId}] [${remoteTxnId}] Flow ID :: ${data.flowId} :: Node ID :: ${data.nodeId} :: State ID :: ${stateId} :: Headers :: ${JSON.stringify(req.headers)}`);
-	logger.trace(`[${txnId}] [${remoteTxnId}] Flow ID :: ${data.flowId} :: Node ID :: ${data.nodeId} :: State ID :: ${stateId} :: Body :: ${JSON.stringify(req.responseBody || req.body)}`);
-	logger.trace(`[${txnId}] [${remoteTxnId}] Flow ID :: ${data.flowId} :: Node ID :: ${data.nodeId} :: State ID :: ${stateId} :: Query :: ${JSON.stringify(req.query)}`);
+
+	try {
+		logger.debug(`[${txnId}] [${remoteTxnId}] Creating state for FlowID :: ${data.flowId} :: NodeID :: ${data.nodeId}`);
+		logger.trace(`[${txnId}] [${remoteTxnId}] FlowID :: ${data.flowId} :: NodeID :: ${data.nodeId} :: Headers :: ${JSON.stringify(req.headers)}`);
+		logger.trace(`[${txnId}] [${remoteTxnId}] FlowID :: ${data.flowId} :: NodeID :: ${data.nodeId} :: Body :: ${JSON.stringify(req.responseBody || req.body)}`);
+		logger.trace(`[${txnId}] [${remoteTxnId}] FlowID :: ${data.flowId} :: NodeID :: ${data.nodeId} :: Query :: ${JSON.stringify(req.query)}`);
 
 
-	const state = {};
-	state._id = stateId;
+		const state = {};
+		state._id = stateId;
 
-	state.flowId = data.flowId;
+		state.flowId = data.flowId;
 
-	state.nodeId = data.nodeId;
-	state.nodeType = data.nodeType;
+		state.nodeId = data.nodeId;
+		state.flowNodeId = data.flowNodeId;
+		state.nodeType = data.nodeType;
 
-	state.activityId = req.query.activityId || req.params.activityId;
-	
-	state.query = req.query;
-	state.headers = req.headers;
-	
-	state.status = 'PENDING';
-	state.statusCode = req.statusCode;
+		state.activityId = req.query.activityId || req.params.activityId;
 
-	state.body = req.body || req.responseBody;
+		state.query = req.query;
+		state.params = req.params;
+		state.headers = req.headers;
+		state.contentType = data.contentType || 'application/json';
 
-	state.contentType = data.contentType || 'application/json';
+		state.status = 'PENDING';
+		state.statusCode = req.statusCode || null;
 
-	state._metadata = {
-		createdAt: new Date(),
-		lastUpdated: new Date(),
-		deleted: false
-	};
+		state.body = req.body || {};
+		state.responseBody = req.responseBody || null;
 
 
-	logger.debug(`[${txnId}] [${remoteTxnId}] Created state for Flow ID :: ${data.flowId} :: Node ID :: ${data.nodeId} :: State ID :: ${stateId}`);
-	logger.trace(`[${txnId}] [${remoteTxnId}] Flow ID :: ${data.flowId} :: Node ID :: ${data.nodeId} :: State ID :: ${stateId} :: State :: ${JSON.stringify(state)}`);
-	return state;
+		state._metadata = {
+			createdAt: new Date(),
+			lastUpdated: new Date(),
+			deleted: false
+		};
+
+
+		logger.debug(`[${txnId}] [${remoteTxnId}] Created state for FlowID :: ${data.flowId} :: NodeID :: ${data.nodeId}`);
+		logger.trace(`[${txnId}] [${remoteTxnId}] FlowID :: ${data.flowId} :: NodeID :: ${data.nodeId} :: State :: ${JSON.stringify(state)}`);
+
+		return state;
+	} catch (err) {
+		logger.error(`[${txnId}] [${remoteTxnId}] Error creating state data for FlowID :: ${data.flowId} :: NodeID :: ${data.nodeId} :: ${err}`);
+		throw err;
+	}
 }
 
 
@@ -55,9 +64,9 @@ async function upsertState(req, state) {
 	const txnId = req.headers['data-stack-txn-id'];
 	const remoteTxnId = req.headers['data-stack-remote-txn-id'];
 
-	logger.debug(`[${txnId}] [${remoteTxnId}] Upserting Stage for Flow ID :: ${state.flowId} :: Node ID :: ${state.nodeId} :: State ID :: ${state._id} :: Activity ID :: ${state.activityId}`);
-	logger.trace(`[${txnId}] [${remoteTxnId}] Flow ID :: ${state.flowId} :: Node ID :: ${state.nodeId} :: State ID :: ${state._id} :: Activity ID :: ${state.activityId} :: State :: ${JSON.stringify(state)}`);
-	
+	logger.debug(`[${txnId}] [${remoteTxnId}] Upserting Stage for FlowID :: ${state.flowId} :: NodeID :: ${state.nodeId} :: ActivityID :: ${state.activityId}`);
+	logger.trace(`[${txnId}] [${remoteTxnId}] FlowID :: ${state.flowId} :: NodeID :: ${state.nodeId} :: ActivityID :: ${state.activityId} :: State :: ${JSON.stringify(state)}`);
+
 
 	state._metadata.lastUpdated = new Date();
 
@@ -67,11 +76,12 @@ async function upsertState(req, state) {
 			{ $set: state },
 			{ upsert: true }
 		);
-		logger.debug(`[${txnId}] [${remoteTxnId}] Upserted State for Flow ID :: ${state.flowId} :: Node ID :: ${state.nodeId} :: State ID :: ${state._id}`);
-		logger.trace(`[${txnId}] [${remoteTxnId}] Upsert State Result for Flow ID :: ${state.flowId} :: Node ID :: ${state.nodeId} :: State ID :: ${state._id} :: ${JSON.stringify(status)}`);
+		logger.debug(`[${txnId}] [${remoteTxnId}] Upserted State for FlowID :: ${state.flowId} :: NodeID :: ${state.nodeId}`);
+		logger.trace(`[${txnId}] [${remoteTxnId}] Upsert State Result for FlowID :: ${state.flowId} :: NodeID :: ${state.nodeId} :: ${JSON.stringify(status)}`);
 
 	} catch (err) {
-		logger.debug(`[${txnId}] [${remoteTxnId}] Error upserting State for Flow ID :: ${state.flowId} :: Node ID :: ${state.nodeId} :: State ID :: ${state._id} :: ${err}`);
+		logger.debug(`[${txnId}] [${remoteTxnId}] Error upserting State for FlowID :: ${state.flowId} :: NodeID :: ${state.nodeId} :: ${err}`);
+		throw err;
 	}
 }
 
@@ -79,13 +89,13 @@ async function upsertState(req, state) {
 async function updateActivity(req, data) {
 	const txnId = req.headers['data-stack-txn-id'];
 	const remoteTxnId = req.headers['data-stack-remote-txn-id'];
-	
+
 	const activityId = req.query.activityId || req.params.activityId;
 	const activityURL = `${config.baseUrlCM}/${config.app}/processflow/activities/${data.flowId}/${activityId}`;
 
-	logger.debug(`[${txnId}] [${remoteTxnId}] Updating Activity for Flow ID :: ${data.flowId} :: Activity ID :: ${activityId}`);
+	logger.debug(`[${txnId}] [${remoteTxnId}] Updating Activity for FlowID :: ${data.flowId} :: ActivityID :: ${activityId}`);
 	logger.debug(`[${txnId}] [${remoteTxnId}] Url for updating Activity :: ${activityURL}`);
-	
+
 	try {
 		const status = await httpClient.request({
 			method: 'PUT',
@@ -96,13 +106,14 @@ async function updateActivity(req, data) {
 			}
 		});
 
-		logger.debug(`[${txnId}] [${remoteTxnId}] Updated Activity for Flow ID :: ${data.flowId} :: Activity ID :: ${activityId}`);
-		logger.trace(`[${txnId}] [${remoteTxnId}] Activity status for Flow ID :: ${data.flowId} :: Activity ID :: ${activityId} :: ${status.statusCode}`);
-		logger.trace(`[${txnId}] [${remoteTxnId}] Activity status for Flow Id :: ${data.flowId} :: Activity ID :: ${activityId} :: ${JSON.stringify(status.body)}`);
+		logger.debug(`[${txnId}] [${remoteTxnId}] Updated Activity for FlowID :: ${data.flowId} :: ActivityID :: ${activityId}`);
+		logger.trace(`[${txnId}] [${remoteTxnId}] Activity status for FlowID :: ${data.flowId} :: ActivityID :: ${activityId} :: ${status.statusCode}`);
+		logger.trace(`[${txnId}] [${remoteTxnId}] Activity status for FlowID :: ${data.flowId} :: ActivityID :: ${activityId} :: ${JSON.stringify(status.body)}`);
 
 		return true;
 	} catch (err) {
-		logger.error(`[${txnId}] [${remoteTxnId}] Error Updating Activity for Flow ID :: ${data.flowId} :: Activity ID :: ${activityId} :: ${err}`);
+		logger.error(`[${txnId}] [${remoteTxnId}] Error Updating Activity for FlowID :: ${data.flowId} :: ActivityID :: ${activityId} :: ${err}`);
+		throw err;
 	}
 }
 
