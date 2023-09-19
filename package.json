@@ -1,6 +1,6 @@
 {
   "name": "dn-flow-base",
-  "version": "2.7.5",
+  "version": "2.7.6",
   "description": "Process Flows Base Image",
   "main": "app.js",
   "scripts": {
