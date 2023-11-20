@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/appveen/dn-flow-base#readme",
   "dependencies": {
-    "@appveen/data.stack-utils": "^1.0.21",
+    "@appveen/data.stack-utils": "https://github.com/appveen/data.stack-utils.git",
     "@appveen/rest-crud": "git@github.com:appveen/rest-crud.git",
     "ajv": "^6.12.6",
     "async": "^3.2.4",
@@ -42,9 +42,7 @@
     "node-cron": "^3.0.2",
     "pg": "^8.10.0",
     "ssh2-sftp-client": "^9.0.4",
-    "uuid": "^8.3.2",
-    "xlsx": "^0.18.5",
-    "xlsx-populate": "^1.21.0"
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "dotenv": "^16.0.0",
